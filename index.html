@@ -3,310 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studio AI Voice Reader</title>
+    <title>Pure System TTS Reader</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        :root {
-            --bg-color: #0b0e14;
-            --card-bg: #161b22;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.4);
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f3f4f6;
+            color: #1f2937;
         }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: #e6edf3;
-            overflow-x: hidden;
+        .app-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
-
-        .studio-glass {
-            background: var(--card-bg);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-
         textarea {
-            background: #0d1117 !important;
-            border: 1px solid #30363d !important;
             scrollbar-width: thin;
-            scrollbar-color: #30363d transparent;
+            scrollbar-color: #e5e7eb transparent;
         }
-
-        .progress-bar {
-            height: 4px;
-            background: #30363d;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        #progressInner {
-            width: 0%;
-            height: 100%;
-            background: var(--accent);
-            box-shadow: 0 0 10px var(--accent-glow);
-            transition: width 0.3s ease;
-        }
-
-        /* Schieberegler Styling */
-        input[type=range] {
-            -webkit-appearance: none;
-            background: transparent;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 6px;
-            background: #30363d;
-            border-radius: 3px;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 18px;
-            width: 18px;
-            border-radius: 50%;
-            background: var(--accent);
-            margin-top: -6px;
-            cursor: pointer;
-            box-shadow: 0 0 10px var(--accent-glow);
+        .active-ring {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="p-4 md:p-8">
 
-    <div class="w-full max-w-5xl studio-glass rounded-3xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[800px]">
-        
-        <div class="w-full md:w-80 bg-[#12161c] p-8 border-r border-white/5 flex flex-col justify-between">
+    <div class="app-container overflow-hidden flex flex-col min-h-[80vh]">
+        <header class="p-6 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
             <div>
-                <h1 class="text-xl font-bold mb-8 flex items-center gap-3">
-                    <i class="fas fa-waveform text-blue-500"></i> Studio <span class="text-blue-500">Voice</span>
-                </h1>
+                <h1 class="text-2xl font-semibold text-gray-800">System <span class="text-blue-600">Reader</span></h1>
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-widest mt-1">Unbegrenzte lokale Sprachausgabe</p>
+            </div>
+            <div id="statusIndicator" class="flex items-center gap-2 text-sm font-medium text-gray-500">
+                <span class="w-2 h-2 rounded-full bg-gray-300" id="statusDot"></span>
+                <span id="statusText">Bereit</span>
+            </div>
+        </header>
 
-                <div class="space-y-8">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Stimme (Neural)</label>
-                        <select id="voiceSelect" class="w-full bg-[#0d1117] border border-[#30363d] text-sm p-3 rounded-xl outline-none focus:border-blue-500 transition-colors">
-                            <option value="de-DE-ConradNeural">Männlich - Kraftvoll (Conrad)</option>
-                            <option value="de-DE-KillianNeural">Männlich - Sanft (Killian)</option>
-                            <option value="de-DE-KatjaNeural">Weiblich - Elegant (Katja)</option>
-                            <option value="de-DE-AmalaNeural">Weiblich - Erzählerisch (Amala)</option>
-                            <option value="en-US-AriaNeural">English - Aria (Female)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Tempo</label>
-                            <span id="speedVal" class="text-xs text-blue-500 font-mono">1.0x</span>
-                        </div>
-                        <input type="range" id="speed" min="0.5" max="2" value="1" step="0.1" class="w-full">
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="text-xs font-bold text-gray-500 uppercase tracking-widest">Tonhöhe</label>
-                            <span id="pitchVal" class="text-xs text-blue-500 font-mono">Normal</span>
-                        </div>
-                        <input type="range" id="pitch" min="-20" max="20" value="0" step="1" class="w-full">
-                    </div>
+        <main class="flex-1 p-6 flex flex-col gap-6">
+            <div class="relative flex-1 flex flex-col">
+                <textarea id="textInput" 
+                    class="w-full flex-1 p-6 text-lg bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
+                    placeholder="Füge hier deinen Text ein (auch sehr lange Texte)..."></textarea>
+                <div class="absolute bottom-4 right-6 text-[10px] font-mono text-gray-400 uppercase tracking-tighter">
+                    <span id="charCount">0</span> Zeichen
                 </div>
             </div>
 
-            <div class="pt-8">
-                <button id="downloadAll" class="hidden w-full py-3 bg-emerald-600/10 text-emerald-500 border border-emerald-600/20 rounded-xl text-sm font-semibold hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-file-download"></i> Komplettes MP3
-                </button>
-            </div>
-        </div>
-
-        <div class="flex-1 flex flex-col p-6 md:p-10 relative">
-            <div class="flex justify-between items-center mb-6">
-                <div id="statusTag" class="px-3 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-widest rounded-full border border-blue-500/20">
-                    Bereit
-                </div>
-                <div id="charCount" class="text-xs text-gray-500 font-mono italic">0 Zeichen</div>
-            </div>
-
-            <textarea id="textInput" class="flex-1 w-full p-6 text-lg leading-relaxed text-gray-300 rounded-2xl outline-none resize-none mb-6" placeholder="Füge hier dein Skript ein. Selbst sehr lange Texte werden automatisch verarbeitet..."></textarea>
-
-            <div class="bg-[#12161c] p-6 rounded-2xl border border-white/5 shadow-2xl">
-                <div class="progress-bar mb-6">
-                    <div id="progressInner"></div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-gray-400 uppercase ml-1">Stimme</label>
+                    <select id="voiceSelect" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-500"></select>
                 </div>
                 
-                <div class="flex items-center justify-between">
-                    <div id="loadingInfo" class="text-xs text-gray-500 font-medium">Bereit zum Rendern...</div>
-                    
-                    <div class="flex items-center gap-4">
-                        <button id="playBtn" class="w-16 h-16 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg shadow-blue-600/20 flex items-center justify-center text-xl transition-all active:scale-95">
-                            <i class="fas fa-play ml-1"></i>
-                        </button>
-                        <button id="stopBtn" class="w-12 h-12 bg-[#30363d] hover:bg-red-900/30 hover:text-red-500 text-gray-400 rounded-full flex items-center justify-center transition-all">
-                            <i class="fas fa-stop"></i>
-                        </button>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <label class="text-xs font-bold text-gray-400 uppercase ml-1">Tempo</label>
+                        <span id="speedVal" class="text-xs font-mono text-blue-600">1.0x</span>
                     </div>
+                    <input type="range" id="rate" min="0.5" max="2" value="1" step="0.1" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                </div>
 
-                    <div id="audioContainer"></div>
+                <div class="flex gap-2">
+                    <button id="playBtn" class="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2 active:scale-95">
+                        <i class="fas fa-play"></i> Start
+                    </button>
+                    <button id="stopBtn" class="w-12 h-12 bg-gray-100 hover:bg-red-100 hover:text-red-600 text-gray-500 rounded-xl transition-all flex items-center justify-center">
+                        <i class="fas fa-stop"></i>
+                    </button>
                 </div>
             </div>
-        </div>
+        </main>
+
+        <footer class="p-6 bg-gray-50 border-t border-gray-100">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="text-xs text-gray-500 max-w-md">
+                    <i class="fas fa-info-circle mr-1"></i> 
+                    Da Systemstimmen direkt im Browser generiert werden, ist ein direkter "Download-Button" technisch nicht möglich. Nutze für Aufnahmen Tools wie <b>Audacity</b> oder eine Browser-Erweiterung wie <b>Audio Downloader Prime</b>.
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script>
-        const playBtn = document.querySelector('#playBtn');
-        const stopBtn = document.querySelector('#stopBtn');
+        const synth = window.speechSynthesis;
         const textInput = document.querySelector('#textInput');
         const voiceSelect = document.querySelector('#voiceSelect');
-        const speedInput = document.querySelector('#speed');
-        const pitchInput = document.querySelector('#pitch');
+        const playBtn = document.querySelector('#playBtn');
+        const stopBtn = document.querySelector('#stopBtn');
+        const rateInput = document.querySelector('#rate');
         const speedVal = document.querySelector('#speedVal');
-        const progressInner = document.querySelector('#progressInner');
-        const statusTag = document.querySelector('#statusTag');
-        const downloadAll = document.querySelector('#downloadAll');
-        const loadingInfo = document.querySelector('#loadingInfo');
         const charCount = document.querySelector('#charCount');
+        const statusText = document.querySelector('#statusText');
+        const statusDot = document.querySelector('#statusDot');
 
-        let audioChunks = [];
-        let currentAudio = null;
-        let isPlaying = false;
+        let voices = [];
+        let isSpeaking = false;
+        let currentChunkIndex = 0;
+        let chunks = [];
 
-        // UI Listener
-        speedInput.oninput = () => speedVal.textContent = speedInput.value + 'x';
-        textInput.oninput = () => charCount.textContent = textInput.value.length + ' Zeichen';
-
-        // Hilfsfunktion: Text in sinnvolle Stücke splitten (ca. 500 Zeichen an Satzenden)
-        function splitText(text) {
-            const chunks = [];
-            const maxLength = 500;
-            let currentIdx = 0;
-
-            while (currentIdx < text.length) {
-                let endIdx = currentIdx + maxLength;
-                if (endIdx < text.length) {
-                    // Suche nach dem letzten Punkt, Ausrufezeichen oder Komma im Bereich
-                    const lastStop = text.substring(currentIdx, endIdx).search(/[.!?]\s|[.!?]$/);
-                    if (lastStop !== -1) endIdx = currentIdx + lastStop + 1;
-                }
-                chunks.push(text.substring(currentIdx, endIdx).trim());
-                currentIdx = endIdx;
-            }
-            return chunks.filter(c => c.length > 0);
-        }
-
-        async function startPlayback() {
-            const text = textInput.value.trim();
-            if (!text) return;
-
-            isPlaying = true;
-            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            statusTag.textContent = "Verarbeite...";
-            audioChunks = [];
+        // Stimmen laden
+        function loadVoices() {
+            voices = synth.getVoices();
+            voiceSelect.innerHTML = '';
             
-            const chunks = splitText(text);
-            const voice = voiceSelect.value;
-            const speed = (speedInput.value - 1) * 100; // Umwandlung für API (+0%, -20% etc)
-            const pitch = pitchInput.value + "Hz";
+            // Bevorzuge Deutsch
+            const deVoices = voices.filter(v => v.lang.includes('de'));
+            const otherVoices = voices.filter(v => !v.lang.includes('de'));
+            
+            [...deVoices, ...otherVoices].forEach(voice => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = voice.name;
+                voiceSelect.appendChild(option);
+            });
+        }
 
-            try {
-                for (let i = 0; i < chunks.length; i++) {
-                    if (!isPlaying) break;
-                    
-                    loadingInfo.textContent = `Generiere Teil ${i+1} von ${chunks.length}...`;
-                    const progress = ((i + 1) / chunks.length) * 100;
-                    progressInner.style.width = `${progress}%`;
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+        loadVoices();
 
-                    // Diese API nutzt einen stabilen Microsoft Edge Proxy
-                    const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://api.voicemaker.in/v1/tts/edge?text=${encodeURIComponent(chunks[i])}&voice=${voice}&speed=${speedInput.value}&pitch=${pitchInput.value}`)}`;
-                    
-                    // Fallback-Logik oder alternative API, falls der Proxy klemmt
-                    // Hier nutzen wir eine direktere Schnittstelle für Stabilität
-                    const response = await fetch(`https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(chunks[i])}&speaker=1`); 
-                    // Hinweis: Im echten Einsatz empfiehlt sich ein eigener kleiner Node.js Proxy für Edge TTS.
-                    // Für diese Demo nutzen wir ein spezialisiertes Edge-TTS-Format:
-                    
-                    const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunks[i])}&tl=${voice.split('-')[0]}&client=tw-ob`;
-                    
-                    // Wir bleiben bei den High-End Stimmen (Edge) via Proxy:
-                    const finalFetch = await fetch(`https://manage.getliner.com/api/v1/tts/edge?text=${encodeURIComponent(chunks[i])}&speaker=${voice}&speed=${speedInput.value}`);
-                    const data = await finalFetch.json();
-                    
-                    if (data.audio_url || data.url) {
-                        audioChunks.push(data.audio_url || data.url);
-                    }
-                }
+        // Text-Chunking Funktion (Das Geheimnis für lange Texte)
+        function splitIntoChunks(text) {
+            // Teilt den Text an Satzenden (. ! ?), um flüssig zu lesen
+            return text.match(/[^\.!\?]+[\.!\?]+/g) || [text];
+        }
 
-                if (audioChunks.length > 0) {
-                    playSequence(0);
-                    downloadAll.classList.remove('hidden');
-                }
-
-            } catch (err) {
-                console.error(err);
-                statusTag.textContent = "Fehler";
-                statusTag.classList.replace('bg-blue-500/10', 'bg-red-500/10');
-                loadingInfo.textContent = "API-Limit oder Netzwerkfehler. Versuche kürzeren Text.";
+        function updateStatus(state) {
+            if (state === 'active') {
+                statusDot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
+                statusText.textContent = "Liest...";
+                playBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            } else if (state === 'paused') {
+                statusDot.className = "w-2 h-2 rounded-full bg-yellow-500";
+                statusText.textContent = "Pausiert";
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Weiter';
+            } else {
+                statusDot.className = "w-2 h-2 rounded-full bg-gray-300";
+                statusText.textContent = "Bereit";
+                playBtn.innerHTML = '<i class="fas fa-play"></i> Start';
             }
         }
 
-        function playSequence(index) {
-            if (index >= audioChunks.length || !isPlaying) {
-                resetUI();
+        function speakNextChunk() {
+            if (currentChunkIndex >= chunks.length) {
+                isSpeaking = false;
+                updateStatus('idle');
                 return;
             }
 
-            statusTag.textContent = "Wiedergabe";
-            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            const utter = new SpeechSynthesisUtterance(chunks[currentChunkIndex]);
+            const selectedVoice = voices.find(v => v.name === voiceSelect.value);
+            if (selectedVoice) utter.voice = selectedVoice;
             
-            currentAudio = new Audio(audioChunks[index]);
-            currentAudio.play();
+            utter.rate = rateInput.value;
             
-            currentAudio.onended = () => {
-                playSequence(index + 1);
+            utter.onend = () => {
+                if (isSpeaking) {
+                    currentChunkIndex++;
+                    speakNextChunk();
+                }
             };
-        }
 
-        function resetUI() {
-            isPlaying = false;
-            playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-            statusTag.textContent = "Bereit";
-            loadingInfo.textContent = "Wiedergabe beendet.";
+            utter.onerror = (e) => {
+                console.error("Fehler bei Sprachausgabe", e);
+                updateStatus('idle');
+            };
+
+            synth.speak(utter);
         }
 
         playBtn.onclick = () => {
-            if (isPlaying) {
-                if (currentAudio) {
-                    if (currentAudio.paused) {
-                        currentAudio.play();
-                        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    } else {
-                        currentAudio.pause();
-                        playBtn.innerHTML = '<i class="fas fa-play ml-1"></i>';
-                    }
-                }
-            } else {
-                startPlayback();
+            if (synth.speaking && !synth.paused) {
+                synth.pause();
+                updateStatus('paused');
+                return;
+            }
+            
+            if (synth.paused) {
+                synth.resume();
+                updateStatus('active');
+                return;
+            }
+
+            const text = textInput.value.trim();
+            if (text) {
+                chunks = splitIntoChunks(text);
+                currentChunkIndex = 0;
+                isSpeaking = true;
+                updateStatus('active');
+                speakNextChunk();
             }
         };
 
         stopBtn.onclick = () => {
-            isPlaying = false;
-            if (currentAudio) currentAudio.pause();
-            progressInner.style.width = '0%';
-            resetUI();
+            isSpeaking = false;
+            synth.cancel();
+            updateStatus('idle');
         };
 
-        downloadAll.onclick = () => {
-            // Bei mehreren Chunks öffnen wir den ersten Link in einem neuen Tab
-            // Für ein "Merge" aller Dateien wäre ein Backend nötig, aber so hast du Zugriff:
-            audioChunks.forEach((url, i) => {
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `audio_part_${i+1}.mp3`;
-                a.click();
-            });
-        };
+        rateInput.oninput = () => speedVal.textContent = rateInput.value + 'x';
+        textInput.oninput = () => charCount.textContent = textInput.value.length.toLocaleString();
+
     </script>
 </body>
 </html>
